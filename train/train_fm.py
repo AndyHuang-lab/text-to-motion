@@ -72,6 +72,7 @@ def train_flow_matching():
         'log_interval': 10,
         'save_interval': 50,
         'mask_prob': 0.1,  # For classifier-free guidance
+        'num_steps': 10,  # ODE solver steps for sampling/evaluation
     }
 
     print("=" * 60)

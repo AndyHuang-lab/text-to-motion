@@ -13,9 +13,10 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 
-def get_schedule(num_timesteps=100):
+def get_schedule(num_timesteps=10):
     """Simple linear diffusion schedule"""
     beta_start = 0.0001
     beta_end = 0.02
@@ -35,7 +36,7 @@ def train_ldm():
         'num_layers': 6,
         'clip_dim': 512,
         'history_dim': 70,  # nfeats (per-timestep feature dimension with end_effector_pos)
-        'num_timesteps': 100,
+        'num_timesteps': 10,
         'history_len': 10,
         'future_len': 20,
         'batch_size': 32,
@@ -45,7 +46,6 @@ def train_ldm():
         'vae_checkpoint': 'checkpoints/vae_best.pt',
         'save_dir': Path('checkpoints'),
         'log_interval': 10,  # Print every N batches
-        'save_interval': 10,  # Save every N epochs
         'mask_prob': 0.1,  # For classifier-free guidance
     }
 
@@ -154,6 +154,7 @@ def train_ldm():
     print("=" * 60)
 
     best_val_loss = float('inf')
+    train_losses, val_losses = [], []
 
     for epoch in range(config['epochs']):
         # Training
@@ -254,23 +255,12 @@ def train_ldm():
                 val_num_batches += 1
 
         avg_val_loss = val_total_loss / val_num_batches
+        train_losses.append(avg_train_loss)
+        val_losses.append(avg_val_loss)
         print(f"  Val Epoch {epoch+1}/{config['epochs']} | Loss: {avg_val_loss:.4f}")
         print("=" * 60)
 
-        # Save checkpoint
-        if (epoch + 1) % config['save_interval'] == 0:
-            checkpoint_path = config['save_dir'] / f'ldm_epoch_{epoch+1}.pt'
-            torch.save({
-                'epoch': epoch,
-                'denoiser_state_dict': denoiser.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'train_loss': avg_train_loss,
-                'val_loss': avg_val_loss,
-                'config': config,
-            }, checkpoint_path)
-            print(f"  Saved checkpoint: {checkpoint_path}")
-
-        # Save best model
+        # Save best model only
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             best_path = config['save_dir'] / 'ldm_best.pt'
@@ -283,6 +273,22 @@ def train_ldm():
                 'config': config,
             }, best_path)
             print(f"  Saved best model: {best_path} (val_loss: {avg_val_loss:.4f})")
+
+    # Save loss curves
+    fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+    epochs_range = range(1, len(train_losses) + 1)
+    ax.plot(epochs_range, train_losses, 'b-', label='Train', linewidth=2)
+    ax.plot(epochs_range, val_losses, 'r-', label='Val', linewidth=2)
+    ax.set_xlabel('Epoch', fontsize=12)
+    ax.set_ylabel('Loss (MSE)', fontsize=12)
+    ax.set_title('LDM Training Loss', fontsize=14, fontweight='bold')
+    ax.legend(fontsize=11)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    loss_curve_path = config['save_dir'] / 'ldm_loss_curves.png'
+    plt.savefig(loss_curve_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"  Saved loss curves: {loss_curve_path}")
 
     print("\n" + "=" * 60)
     print("Training completed!")
