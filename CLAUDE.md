@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Text-conditioned motion generation for Unitree G1 humanoid robot using **VAE + Flow Matching**.
+Text-conditioned motion generation for Unitree G1 humanoid robot using **VAE + Generative Model**.
 
 - **23-DOF** humanoid, **70-dim** features (includes end_effector_pos)
 - CLIP text conditioning (512-dim)
@@ -13,14 +13,14 @@ Text-conditioned motion generation for Unitree G1 humanoid robot using **VAE + F
 Two-stage generation pipeline:
 
 1. **VAE** (`model/vae.py`): Compresses 70-dim motion sequences to 128-dim latent vectors
-2. **Flow Matching** (`model/flow_matching.py`): Predicts velocity field from noise to data latent
+2. **Generative Model**: Either **Flow Matching** (fast) or **LDM/DDPM** (baseline)
 
-**Data Flow**: Raw Motion → 70-dim Features → VAE encode → Flow Matching (ODE solver) → VAE decode → Motion
+**Data Flow**: Raw Motion → 70-dim Features → VAE encode → Generative Model → VAE decode → Motion
 
-**Flow Matching** replaces the slower Latent Diffusion Model (`model/ldm.py`):
-- Training: Learn velocity field v = x_1 - x_0
-- Sampling: Solve ODE with Euler/Heun solver (10-50 steps vs 1000 for diffusion)
-- 10-100x faster than diffusion
+| Model | Sampling | Steps | Speed |
+|-------|----------|-------|-------|
+| Flow Matching | ODE Euler | 10 | Fastest |
+| LDM (DDPM) | Iterative denoising | 10 | Baseline |
 
 ## Quick Start
 
@@ -34,15 +34,23 @@ python -m dataloader.compute_statistics
 # 2. Train VAE (required first step)
 python -m train.train_vae
 
-# 3. Train Flow Matching (requires VAE checkpoint)
+# 3a. Train Flow Matching (recommended, fast)
 python -m train.train_fm
+
+# 3b. OR Train LDM/DDPM (baseline)
+python -m train.train_ldm
+
+# 4. Evaluate generation quality
+python eval/evaluate_fm.py --steps 10   # Flow Matching
+python eval/evaluate_ldm.py --steps 10  # LDM/DDPM
 ```
 
 ## Model Config
 
 ```python
-VAE(nfeats=70, latent_dim=128, embed_dim=512, n_head=8, num_layers=6)
+VAE(nfeats=70, latent_dim=128, embed_dim=384, n_head=6, num_layers=4)
 FlowMatchingTransformer(embed_dim=512, clip_dim=512, history_dim=70, latent_dim=128)
+DenoiserTransformer(embed_dim=512, clip_dim=512, history_dim=70, noise_dim=128)  # LDM
 ```
 
 ## Feature Breakdown (70-dim)
@@ -65,24 +73,29 @@ FlowMatchingTransformer(embed_dim=512, clip_dim=512, history_dim=70, latent_dim=
 - Motion features: `(batch, seq_len, 70)` - seq_len: 10 (history) or 20 (future)
 - VAE latent: `(batch, 128)`
 - Text embedding: `(batch, 512)` - CLIP-encoded, pre-computed and cached
-- Flow Matching input: `(batch, 1, 128)`
+- Flow Matching input: `(batch, 128)` (no seq dim)
+- LDM input: `(batch, 1, 128)` (with seq dim)
 
 ## File Structure
 
 ```
 model/
 ├── vae.py              # VAE (70-dim → 128-dim latent)
-├── flow_matching.py    # Flow matching (PRIMARY - fast)
-└── ldm.py              # Latent Diffusion (legacy - slow)
+├── flow_matching.py    # Flow Matching (recommended, fast)
+└── ldm.py              # LDM/DDPM (baseline)
 
 dataloader/
 ├── data.py             # 70-dim feature extraction, normalization
 └── compute_statistics.py  # Compute dataset mean/std
 
 train/
-├── train_vae.py        # Train VAE first (100 epochs)
-├── train_fm.py         # Train Flow Matching (requires VAE)
-└── train_ldm.py        # Train LDM (legacy)
+├── train_vae.py        # Train VAE (required first)
+├── train_fm.py         # Train Flow Matching (num_steps=10)
+└── train_ldm.py        # Train LDM/DDPM (num_timesteps=10)
+
+eval/
+├── evaluate_fm.py      # Evaluate Flow Matching (MSE + Diversity)
+└── evaluate_ldm.py     # Evaluate LDM/DDPM (MSE + Diversity)
 
 dataset/
 ├── train.pkl           # Motion data (4.9GB)
@@ -94,21 +107,28 @@ dataset/
 
 ## Training Configuration
 
-Both trainers use:
+All models use:
 - Batch size: 32
 - Learning rate: 1e-4
-- Epochs: 100
-- Save/checkpoint interval: every 10 epochs
 - Device auto-detection: CUDA > MPS > CPU
-
-VAE-specific:
-- KL annealing over 20 epochs (0 → 0.0001)
-- Loss: MSE reconstruction + KL divergence
-
-Flow Matching-specific:
-- Requires pretrained VAE checkpoint
 - Classifier-free guidance (mask_prob=0.1)
-- Loss: MSE on velocity field
+
+| Model | Epochs | Timesteps/Steps | Save Interval |
+|-------|--------|-----------------|---------------|
+| VAE | 100 | - | 10 |
+| Flow Matching | 200 | 10 (sampling) | 50 |
+| LDM/DDPM | 100 | 10 (training + sampling) | 10 (best only) |
+
+## Evaluation Metrics
+
+```bash
+# Both evaluators output:
+# - Conditional MSE: Generated vs GT motion (lower = better)
+# - Diversity (L2): Mean pairwise distance (higher = more diverse)
+
+python eval/evaluate_fm.py --batches 20 --steps 10
+python eval/evaluate_ldm.py --batches 20 --steps 10
+```
 
 ## Device Support
 
@@ -118,11 +138,11 @@ device = 'cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.i
 
 ## Critical Gotchas
 
-1. **70-dim features** - New feature representation with end_effector_pos
+1. **70-dim features** - Feature representation includes end_effector_pos
 2. **Normalization**: Must use `meanstd_70d.pkl` - run `python -m dataloader.compute_statistics` first
-3. **Train VAE first** - Flow Matching requires VAE checkpoint at `checkpoints/vae_best.pt`
+3. **Train VAE first** - All models require VAE checkpoint at `checkpoints/vae_best.pt`
 4. **Text embeddings**: Pre-computed and cached in `dataset/*_text_embed.pkl`
-5. **Positional encoding**: max_len=100 for timesteps in Flow Matching
+5. **Timesteps must match**: If training with `num_timesteps=10`, sampling must also use 10
 6. **End effector joints**: From smpl_joints - left_foot=11, right_foot=27, left_hand=21, right_hand=22
 
 ## Dataset
@@ -139,8 +159,6 @@ torch>=2.0.0
 numpy
 joblib
 scipy
-pyyaml
-tqdm
 matplotlib
 ```
 
