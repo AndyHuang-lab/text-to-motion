@@ -45,7 +45,7 @@ def sample(flow_model, vae, history_motion, text_embedding, device,
                                   text=text_embedding, all_mask=True).squeeze(1)
         pred_z = pred_z_uncond + guidance_scale * (pred_z_cond - pred_z_uncond)
 
-        one_minus_t = (1.0 - t).clamp(min=eps)
+        one_minus_t = (1.0 - t).clamp(min=eps).unsqueeze(-1)  # (B, 1) for broadcasting
         v = (pred_z - x) / one_minus_t
         x = x + dt * v
 
