@@ -17,10 +17,10 @@ Two-stage generation pipeline:
 
 **Data Flow**: Raw Motion → 70-dim Features → VAE encode → Generative Model → VAE decode → Motion
 
-| Model | Sampling | Steps | Speed |
-|-------|----------|-------|-------|
-| Flow Matching | ODE Euler | 10 | Fastest |
-| LDM (DDPM) | Iterative denoising | 10 | Baseline |
+| Model | Training Objective | Sampling | Steps |
+|-------|-------------------|----------|-------|
+| Flow Matching | Predict target latent `z` (MSE) | Euler: `v = (pred_z - x)/(1-t)` | 10 |
+| LDM (DDPM) | Predict `x_0` from noise | DDPM denoising | 10 |
 
 ## Quick Start
 
@@ -73,7 +73,7 @@ DenoiserTransformer(embed_dim=512, clip_dim=512, history_dim=70, noise_dim=128) 
 - Motion features: `(batch, seq_len, 70)` - seq_len: 10 (history) or 20 (future)
 - VAE latent: `(batch, 128)`
 - Text embedding: `(batch, 512)` - CLIP-encoded, pre-computed and cached
-- Flow Matching input: `(batch, 128)` (no seq dim)
+- Flow Matching input: `(batch, 1, 128)` (with seq dim)
 - LDM input: `(batch, 1, 128)` (with seq dim)
 
 ## File Structure
@@ -90,8 +90,8 @@ dataloader/
 
 train/
 ├── train_vae.py        # Train VAE (required first)
-├── train_fm.py         # Train Flow Matching (num_steps=10)
-└── train_ldm.py        # Train LDM/DDPM (num_timesteps=10)
+├── train_fm.py         # Train Flow Matching (predicts target z)
+└── train_ldm.py        # Train LDM/DDPM (predicts x_0, num_timesteps=10)
 
 eval/
 ├── evaluate_fm.py      # Evaluate Flow Matching (MSE + Diversity)
@@ -112,12 +112,13 @@ All models use:
 - Learning rate: 1e-4
 - Device auto-detection: CUDA > MPS > CPU
 - Classifier-free guidance (mask_prob=0.1)
+- Loss curves saved to `checkpoints/*_loss_curves.png`
 
-| Model | Epochs | Timesteps/Steps | Save Interval |
-|-------|--------|-----------------|---------------|
-| VAE | 100 | - | 10 |
-| Flow Matching | 200 | 10 (sampling) | 50 |
-| LDM/DDPM | 100 | 10 (training + sampling) | 10 (best only) |
+| Model | Epochs | Steps | Loss | Save Interval |
+|-------|--------|-------|------|---------------|
+| VAE | 100 | - | MSE + KL | 10 |
+| Flow Matching | 200 | 10 | MSE(pred_z, x_1) | 50 |
+| LDM/DDPM | 100 | 10 | MSE(pred_x0, x_0) | Best only |
 
 ## Evaluation Metrics
 
@@ -144,6 +145,7 @@ device = 'cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.i
 4. **Text embeddings**: Pre-computed and cached in `dataset/*_text_embed.pkl`
 5. **Timesteps must match**: If training with `num_timesteps=10`, sampling must also use 10
 6. **End effector joints**: From smpl_joints - left_foot=11, right_foot=27, left_hand=21, right_hand=22
+7. **Model checkpoint format**: Ensure `torch.load(..., weights_only=False)` for pathlib.Path in config
 
 ## Dataset
 
