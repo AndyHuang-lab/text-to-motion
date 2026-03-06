@@ -17,12 +17,27 @@ import matplotlib.pyplot as plt
 
 
 def get_schedule(num_timesteps=10):
-    """Simple linear diffusion schedule"""
-    beta_start = 0.0001
-    beta_end = 0.02
-    betas = torch.linspace(beta_start, beta_end, num_timesteps)
-    alphas = 1 - betas
-    alphas_cumprod = torch.cumprod(alphas, dim=0)
+    """
+    Cosine diffusion schedule (Improved DDPM, Nichol & Dhariwal 2021).
+
+    Provides smoother noise transition compared to linear schedule.
+    Clips beta to [0.0001, 0.999] for numerical stability.
+    """
+    s = 0.008  # offset to prevent beta=0 at t=0
+    steps = num_timesteps + 1
+    t = torch.linspace(0, num_timesteps, steps)
+
+    # Cosine schedule for alpha_cumprod
+    alphas_cumprod = torch.cos(((t / num_timesteps) + s) / (1 + s) * torch.pi * 0.5) ** 2
+    alphas_cumprod = alphas_cumprod / alphas_cumprod[0]  # normalize so alpha_0 = 1
+
+    # Compute betas from alphas_cumprod
+    betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
+    alphas_cumprod = alphas_cumprod[1:]
+
+    # Clip betas for numerical stability
+    betas = torch.clamp(betas, min=0.0001, max=0.999)
+
     return betas, alphas_cumprod
 
 
