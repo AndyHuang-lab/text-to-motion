@@ -40,7 +40,7 @@ def sample(denoiser, vae, history_motion, text_embedding, device,
            num_timesteps=10, guidance_scale=3.0):
     """DDPM sampling. Returns: [B, future_len, 70]"""
     batch_size = history_motion.shape[0]
-    latent_dim = denoiser.noise_dim
+    latent_dim = denoiser.latent_dim
     future_len = 20
 
     betas, alphas_cumprod, alphas_cumprod_prev = get_schedule(num_timesteps)
@@ -55,19 +55,17 @@ def sample(denoiser, vae, history_motion, text_embedding, device,
     for t in reversed(range(num_timesteps)):
         t_batch = torch.full((batch_size,), t, device=device, dtype=torch.long)
 
-        noise_cond = denoiser(x_t=x, timesteps=t_batch, history_motion=history_motion,
-                             text=text_embedding, all_mask=False)
-        noise_uncond = denoiser(x_t=x, timesteps=t_batch, history_motion=history_motion,
-                               text=text_embedding, all_mask=True)
-        noise_pred = noise_uncond + guidance_scale * (noise_cond - noise_uncond)
+        pred_x0_cond = denoiser(x_t=x, timesteps=t_batch, history_motion=history_motion,
+                                text=text_embedding, all_mask=False)
+        pred_x0_uncond = denoiser(x_t=x, timesteps=t_batch, history_motion=history_motion,
+                                  text=text_embedding, all_mask=True)
+        pred_x0 = pred_x0_uncond + guidance_scale * (pred_x0_cond - pred_x0_uncond)
+        pred_x0 = torch.clamp(pred_x0, -3, 3)
 
         alpha_t = alphas[t]
         alpha_cumprod_t = alphas_cumprod[t]
         alpha_cumprod_prev_t = alphas_cumprod_prev[t]
         beta_t = betas[t]
-
-        pred_x0 = (x - torch.sqrt(1 - alpha_cumprod_t) * noise_pred) / torch.sqrt(alpha_cumprod_t)
-        pred_x0 = torch.clamp(pred_x0, -3, 3)
         mean = (alpha_cumprod_prev_t.sqrt() * beta_t * pred_x0 +
                 (1 - alpha_cumprod_prev_t) * alpha_t.sqrt() * x) / (1 - alpha_cumprod_t)
 
@@ -131,7 +129,7 @@ def main():
 
     denoiser = DenoiserTransformer(
         embed_dim=512, d_ff=2048, n_head=8, num_layers=6, dropout=0.1,
-        activation='gelu', clip_dim=512, history_dim=70, noise_dim=128, mask_prob=0.1,
+        activation='gelu', clip_dim=512, history_dim=70, latent_dim=128, mask_prob=0.1,
     ).to(device)
     ckpt = torch.load(args.ldm, map_location=device, weights_only=False)
     denoiser.load_state_dict(ckpt['denoiser_state_dict'])

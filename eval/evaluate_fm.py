@@ -27,28 +27,30 @@ from dataloader.data import SimpleMotionDataset
 @torch.no_grad()
 def sample(flow_model, vae, history_motion, text_embedding, device,
            num_steps=10, guidance_scale=3.0):
-    """Flow Matching sampling (Euler integration). Returns: [B, future_len, 70]"""
+    """Flow Matching sampling (Euler). Model predicts z; v = (pred_z - x)/(1-t). Returns: [B, future_len, 70]"""
     batch_size = history_motion.shape[0]
     latent_dim = flow_model.latent_dim
+    future_len = 20
     dt = 1.0 / num_steps
+    eps = 1e-5  # avoid div by zero when t -> 1
 
-    # Start from noise (t=0)
     x = torch.randn(batch_size, latent_dim, device=device)
 
-    # Euler integration from t=0 to t=1
     for i in range(num_steps):
         t = torch.full((batch_size,), i * dt, device=device)
 
-        v_cond = flow_model(x_t=x.unsqueeze(1), timesteps=t, history_motion=history_motion,
-                           text=text_embedding, all_mask=False).squeeze(1)
-        v_uncond = flow_model(x_t=x.unsqueeze(1), timesteps=t, history_motion=history_motion,
-                             text=text_embedding, all_mask=True).squeeze(1)
+        pred_z_cond = flow_model(x_t=x.unsqueeze(1), timesteps=t, history_motion=history_motion,
+                                 text=text_embedding, all_mask=False).squeeze(1)
+        pred_z_uncond = flow_model(x_t=x.unsqueeze(1), timesteps=t, history_motion=history_motion,
+                                  text=text_embedding, all_mask=True).squeeze(1)
+        pred_z = pred_z_uncond + guidance_scale * (pred_z_cond - pred_z_uncond)
 
-        v = v_uncond + guidance_scale * (v_cond - v_uncond)
+        one_minus_t = (1.0 - t).clamp(min=eps)
+        v = (pred_z - x) / one_minus_t
         x = x + dt * v
 
     vae.eval()
-    return vae.decode(history_motion, x)
+    return vae.decode(x, history_motion, future_len)
 
 
 def mean_pairwise_l2(x):

@@ -88,18 +88,19 @@ class TimestepEmbedder(nn.Module):
 class FlowMatchingTransformer(nn.Module):
     """
     Flow matching model for text-conditioned motion generation.
+    Predicts target latent z (x_1) instead of velocity.
 
     Training:
         - Sample t ~ Uniform(0, 1)
         - Interpolate: x_t = (1 - t) * x_0 + t * x_1 (noise -> data)
-        - Predict velocity: v = model(x_t, t, history, text)
-        - Target velocity: v_target = x_1 - x_0
-        - Loss: MSE(v_pred, v_target)
+        - Predict z: pred_z = model(x_t, t, history, text)
+        - Loss: MSE(pred_z, x_1)
 
     Sampling (Euler):
         - x = noise ~ N(0, I)
-        - for t in [0, dt, 2dt, ..., 1]:
-            v = model(x, t, history, text)
+        - for t in [0, dt, 2dt, ..., 1-dt]:
+            pred_z = model(x, t, history, text)
+            v = (pred_z - x) / (1 - t)  # velocity from z prediction
             x = x + dt * v
         - Decode x with VAE
 
@@ -111,7 +112,7 @@ class FlowMatchingTransformer(nn.Module):
         - all_mask: if True, mask all text (for classifier-free guidance)
 
     Output:
-        - velocity: [batch_size, 1, latent_dim]
+        - pred_z: predicted target latent x_1 [batch_size, 1, latent_dim]
     """
 
     def __init__(
@@ -169,7 +170,7 @@ class FlowMatchingTransformer(nn.Module):
             norm=encoder_norm,
         )
 
-        # Output projection: predict velocity
+        # Output projection: predict target latent z (x_1)
         self.output_proj = nn.Linear(self.embed_dim, self.latent_dim)
 
     def mask_text(self, text, all_mask=False):
@@ -198,7 +199,7 @@ class FlowMatchingTransformer(nn.Module):
             all_mask: Mask text for classifier-free guidance
 
         Returns:
-            velocity: Predicted velocity field [batch_size, 1, latent_dim]
+            pred_z: Predicted target latent x_1 [batch_size, 1, latent_dim]
         """
         # Embed timestep: [batch_size, embed_dim] -> [1, batch_size, embed_dim]
         time_embed = self.timestep_embedder(timesteps).unsqueeze(0)
@@ -223,8 +224,8 @@ class FlowMatchingTransformer(nn.Module):
         # Transform
         output = self.encoder(src_seq)
 
-        # Extract last token (latent) and predict velocity
-        velocity = self.output_proj(output[-1])  # (batch_size, latent_dim)
+        # Extract last token (latent) and predict target z (x_1)
+        pred_z = self.output_proj(output[-1])  # (batch_size, latent_dim)
 
         # Add sequence dimension for consistency
-        return velocity.unsqueeze(1)  # (batch_size, 1, latent_dim)
+        return pred_z.unsqueeze(1)  # (batch_size, 1, latent_dim)

@@ -208,20 +208,15 @@ def train_flow_matching():
             x_t = (1 - t_expanded) * x_0 + t_expanded * x_1
             x_t = x_t.unsqueeze(1)  # (B, 1, latent_dim)
 
-            # Target velocity: v = x_1 - x_0
-            v_target = (x_1 - x_0).unsqueeze(1)
-
-            # Predict velocity
-            v_pred = flow_model(
+            # Predict target latent z (x_1)
+            pred_z = flow_model(
                 x_t=x_t,
                 timesteps=t,
                 history_motion=history_motion,
                 text=text_emb,
                 all_mask=False
             )
-
-            # Loss on predicted velocity
-            loss = F.mse_loss(v_pred, v_target)
+            loss = F.mse_loss(pred_z, x_1.unsqueeze(1))
 
             # Backward
             optimizer.zero_grad()
@@ -272,19 +267,14 @@ def train_flow_matching():
                 x_t = (1 - t_expanded) * x_0 + t_expanded * x_1
                 x_t = x_t.unsqueeze(1)
 
-                # Target velocity
-                v_target = (x_1 - x_0).unsqueeze(1)
-
-                # Predict velocity
-                v_pred = flow_model(
+                pred_z = flow_model(
                     x_t=x_t,
                     timesteps=t,
                     history_motion=history_motion,
                     text=text_emb,
                     all_mask=False
                 )
-
-                loss = F.mse_loss(v_pred, v_target)
+                loss = F.mse_loss(pred_z, x_1.unsqueeze(1))
 
                 val_total_loss += loss.item()
                 val_num_batches += 1

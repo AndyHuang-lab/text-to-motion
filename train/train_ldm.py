@@ -29,7 +29,7 @@ def get_schedule(num_timesteps=10):
 def train_ldm():
     # Config
     config = {
-        'noise_dim': 128,  # VAE latent dim
+        'latent_dim': 128,  # VAE latent dim
         'embed_dim': 512,
         'n_head': 8,
         'd_ff': 2048,
@@ -101,7 +101,7 @@ def train_ldm():
         n_head=6,
         d_ff=1536,
         num_layers=4,
-        latent_dim=config['noise_dim'],
+        latent_dim=config['latent_dim'],
     ).to(config['device'])
 
     checkpoint_path = Path(config['vae_checkpoint'])
@@ -127,7 +127,7 @@ def train_ldm():
         activation='gelu',
         clip_dim=config['clip_dim'],
         history_dim=config['history_dim'],
-        noise_dim=config['noise_dim'],
+        latent_dim=config['latent_dim'],
         mask_prob=config['mask_prob'],
     ).to(config['device'])
 
@@ -181,8 +181,8 @@ def train_ldm():
             alpha_t = alphas_cumprod[t].view(batch_size, 1, 1)
             x_t = torch.sqrt(alpha_t) * x_start + torch.sqrt(1 - alpha_t) * noise
 
-            # Predict noise (history is already [B, history_len, nfeats])
-            noise_pred = denoiser(
+            # Predict latent (x0)
+            pred_latent = denoiser(
                 x_t=x_t,
                 timesteps=t,
                 history_motion=history,
@@ -190,8 +190,7 @@ def train_ldm():
                 all_mask=False  # Don't mask during training (except when mask_prob applies internally)
             )  # (B, 1, latent_dim)
 
-            # Loss on predicted noise
-            loss = F.mse_loss(noise_pred, noise)
+            loss = F.mse_loss(pred_latent, x_start)
 
             # Backward
             optimizer.zero_grad()
@@ -240,16 +239,14 @@ def train_ldm():
                 alpha_t = alphas_cumprod[t].view(batch_size, 1, 1)
                 x_t = torch.sqrt(alpha_t) * x_start + torch.sqrt(1 - alpha_t) * noise
 
-                # Predict noise (history is already [B, history_len, nfeats])
-                noise_pred = denoiser(
+                pred_latent = denoiser(
                     x_t=x_t,
                     timesteps=t,
                     history_motion=history,
                     text=text_emb,
                     all_mask=False
                 )
-
-                loss = F.mse_loss(noise_pred, noise)
+                loss = F.mse_loss(pred_latent, x_start)
 
                 val_total_loss += loss.item()
                 val_num_batches += 1

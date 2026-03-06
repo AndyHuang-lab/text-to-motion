@@ -50,13 +50,13 @@ class TimestepEmbedder(nn.Module):
 class DenoiserTransformer(nn.Module):
     """
     Input:
-        - x_t: noise at timestep t [batch_size, 1, noise_dim]
+        - x_t: latent at timestep t [batch_size, 1, latent_dim]
         - timesteps: diffusion timestep [batch_size]
         - history_motion: [batch_size, history_len, history_dim]
         - text: CLIP text embedding [batch_size, clip_dim]
         - all_mask: if True, mask all text embeddings (for classifier-free guidance)
     Output:
-        - pred_noise: [batch_size, 1, noise_dim]
+        - pred_latent: [batch_size, 1, latent_dim]
     """
     def __init__(
         self,
@@ -68,7 +68,7 @@ class DenoiserTransformer(nn.Module):
         activation,
         clip_dim,
         history_dim,
-        noise_dim,
+        latent_dim,
         mask_prob,
     ):
         super().__init__()
@@ -81,7 +81,7 @@ class DenoiserTransformer(nn.Module):
         self.activation = activation
 
         self.history_dim = history_dim
-        self.noise_dim = noise_dim
+        self.latent_dim = latent_dim
         self.clip_dim = clip_dim
         self.mask_prob = mask_prob
         
@@ -95,7 +95,7 @@ class DenoiserTransformer(nn.Module):
 
         self.history_embedder = nn.Linear(self.history_dim, self.embed_dim)
 
-        self.noise_embedder = nn.Linear(self.noise_dim, self.embed_dim)
+        self.latent_embedder = nn.Linear(self.latent_dim, self.embed_dim)
 
         TransformerLayer = nn.TransformerEncoderLayer(
             d_model=self.embed_dim,
@@ -110,7 +110,7 @@ class DenoiserTransformer(nn.Module):
             num_layers=self.num_layers,
         )
 
-        self.output_proj = nn.Linear(self.embed_dim, self.noise_dim)
+        self.output_proj = nn.Linear(self.embed_dim, self.latent_dim)
 
     def mask_text(self, text, all_mask=False):
         batch_size, clip_dim = text.shape
@@ -132,18 +132,18 @@ class DenoiserTransformer(nn.Module):
         history_embed = self.history_embedder(history_motion.permute(1, 0, 2))
 
         # [1, batch_size, embed_dim]
-        noise_embed = self.noise_embedder(x_t.permute(1, 0, 2))
+        latent_embed = self.latent_embedder(x_t.permute(1, 0, 2))
 
         # [1, batch_size, embed_dim]
         text_embed = self.text_embedder(self.mask_text(text, all_mask)).unsqueeze(0)
 
-        src_seq = torch.cat((time_embed, text_embed, history_embed, noise_embed), dim=0)
+        src_seq = torch.cat((time_embed, text_embed, history_embed, latent_embed), dim=0)
 
         src_seq = self.position_encoder(src_seq)
 
         output = self.encoder(src_seq)
 
-        pred_noise = self.output_proj(output[-1])  # (batch_size, noise_dim)
+        pred_latent = self.output_proj(output[-1])  # (batch_size, latent_dim)
 
         # Add sequence dimension for consistency
-        return pred_noise.unsqueeze(1)  # (batch_size, 1, noise_dim)
+        return pred_latent.unsqueeze(1)  # (batch_size, 1, latent_dim)
