@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="620" viewBox="0 0 980 620">
+<rect x="0" y="0" width="980" height="620" fill="#F9FAFB"/>
+<text x="24" y="34" font-size="18" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">Evaluation Comparison</text>
+<text x="24" y="54" font-size="12" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#6B7280">DDPM (10 steps) vs Flow Matching (10 steps / 1 step)</text>
+<rect x="24" y="84" width="932" height="217.0" rx="14" ry="14" fill="#FFFFFF" stroke="#E5E7EB"/>
+<rect x="24" y="319.0" width="932" height="277.0" rx="14" ry="14" fill="#FFFFFF" stroke="#E5E7EB"/>
+<text x="34.0" y="102.0" font-size="14" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">Conditional MSE (lower is better)</text>
+<text x="946.0" y="102.0" text-anchor="end" font-size="11" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#6B7280">mean ± std</text>
+<line x1="78.0" y1="255.0" x2="940.0" y2="255.0" stroke="#E5E7EB" stroke-width="1"/>
+<text x="70.0" y="259.0" text-anchor="end" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#374151">0</text>
+<line x1="78.0" y1="219.2" x2="940.0" y2="219.2" stroke="#E5E7EB" stroke-width="1"/>
+<text x="70.0" y="223.2" text-anchor="end" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#374151">0.5</text>
+<line x1="78.0" y1="183.5" x2="940.0" y2="183.5" stroke="#E5E7EB" stroke-width="1"/>
+<text x="70.0" y="187.5" text-anchor="end" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#374151">1</text>
+<line x1="78.0" y1="147.8" x2="940.0" y2="147.8" stroke="#E5E7EB" stroke-width="1"/>
+<text x="70.0" y="151.8" text-anchor="end" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#374151">1.5</text>
+<line x1="78.0" y1="112.0" x2="940.0" y2="112.0" stroke="#E5E7EB" stroke-width="1"/>
+<text x="70.0" y="116.0" text-anchor="end" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#374151">2</text>
+<line x1="78.0" y1="112.0" x2="78.0" y2="255.0" stroke="#111827" stroke-width="1.2"/>
+<line x1="78.0" y1="255.0" x2="940.0" y2="255.0" stroke="#111827" stroke-width="1.2"/>
+<rect x="78.0" y="223.8" width="275.3" height="31.2" rx="6" ry="6" fill="#2563EB" opacity="0.88"/>
+<line x1="215.7" y1="143.9" x2="215.7" y2="255.0" stroke="#111827" stroke-width="1.2"/>
+<line x1="205.7" y1="143.9" x2="225.7" y2="143.9" stroke="#111827" stroke-width="1.2"/>
+<line x1="205.7" y1="255.0" x2="225.7" y2="255.0" stroke="#111827" stroke-width="1.2"/>
+<text x="215.7" y="217.8" text-anchor="middle" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">0.436±1.117</text>
+<text x="215.7" y="273.0" text-anchor="middle" font-size="11" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">DDPM 10 steps</text>
+<rect x="371.3" y="222.0" width="275.3" height="33.0" rx="6" ry="6" fill="#16A34A" opacity="0.88"/>
+<line x1="509.0" y1="150.7" x2="509.0" y2="255.0" stroke="#111827" stroke-width="1.2"/>
+<line x1="499.0" y1="150.7" x2="519.0" y2="150.7" stroke="#111827" stroke-width="1.2"/>
+<line x1="499.0" y1="255.0" x2="519.0" y2="255.0" stroke="#111827" stroke-width="1.2"/>
+<text x="509.0" y="216.0" text-anchor="middle" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">0.461±0.998</text>
+<text x="509.0" y="273.0" text-anchor="middle" font-size="11" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">FM 10 steps</text>
+<rect x="664.7" y="226.7" width="275.3" height="28.3" rx="6" ry="6" fill="#F97316" opacity="0.88"/>
+<line x1="802.3" y1="151.7" x2="802.3" y2="255.0" stroke="#111827" stroke-width="1.2"/>
+<line x1="792.3" y1="151.7" x2="812.3" y2="151.7" stroke="#111827" stroke-width="1.2"/>
+<line x1="792.3" y1="255.0" x2="812.3" y2="255.0" stroke="#111827" stroke-width="1.2"/>
+<text x="802.3" y="220.7" text-anchor="middle" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">0.396±1.050</text>
+<text x="802.3" y="273.0" text-anchor="middle" font-size="11" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">FM 1 step</text>
+<text x="34.0" y="337.0" font-size="14" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">Diversity (L2) (higher is better)</text>
+<text x="946.0" y="337.0" text-anchor="end" font-size="11" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#6B7280">mean ± std</text>
+<line x1="78.0" y1="550.0" x2="940.0" y2="550.0" stroke="#E5E7EB" stroke-width="1"/>
+<text x="70.0" y="554.0" text-anchor="end" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#374151">0</text>
+<line x1="78.0" y1="499.2" x2="940.0" y2="499.2" stroke="#E5E7EB" stroke-width="1"/>
+<text x="70.0" y="503.2" text-anchor="end" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#374151">12.5</text>
+<line x1="78.0" y1="448.5" x2="940.0" y2="448.5" stroke="#E5E7EB" stroke-width="1"/>
+<text x="70.0" y="452.5" text-anchor="end" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#374151">25</text>
+<line x1="78.0" y1="397.8" x2="940.0" y2="397.8" stroke="#E5E7EB" stroke-width="1"/>
+<text x="70.0" y="401.8" text-anchor="end" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#374151">37.5</text>
+<line x1="78.0" y1="347.0" x2="940.0" y2="347.0" stroke="#E5E7EB" stroke-width="1"/>
+<text x="70.0" y="351.0" text-anchor="end" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#374151">50</text>
+<line x1="78.0" y1="347.0" x2="78.0" y2="550.0" stroke="#111827" stroke-width="1.2"/>
+<line x1="78.0" y1="550.0" x2="940.0" y2="550.0" stroke="#111827" stroke-width="1.2"/>
+<rect x="78.0" y="545.1" width="275.3" height="4.9" rx="6" ry="6" fill="#2563EB" opacity="0.88"/>
+<line x1="215.7" y1="543.0" x2="215.7" y2="547.3" stroke="#111827" stroke-width="1.2"/>
+<line x1="205.7" y1="543.0" x2="225.7" y2="543.0" stroke="#111827" stroke-width="1.2"/>
+<line x1="205.7" y1="547.3" x2="225.7" y2="547.3" stroke="#111827" stroke-width="1.2"/>
+<text x="215.7" y="539.1" text-anchor="middle" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">1.195±0.530</text>
+<text x="215.7" y="568.0" text-anchor="middle" font-size="11" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">DDPM 10 steps</text>
+<rect x="371.3" y="507.7" width="275.3" height="42.3" rx="6" ry="6" fill="#16A34A" opacity="0.88"/>
+<line x1="509.0" y1="472.6" x2="509.0" y2="542.9" stroke="#111827" stroke-width="1.2"/>
+<line x1="499.0" y1="472.6" x2="519.0" y2="472.6" stroke="#111827" stroke-width="1.2"/>
+<line x1="499.0" y1="542.9" x2="519.0" y2="542.9" stroke="#111827" stroke-width="1.2"/>
+<text x="509.0" y="501.7" text-anchor="middle" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">10.407±8.665</text>
+<text x="509.0" y="568.0" text-anchor="middle" font-size="11" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">FM 10 steps</text>
+<rect x="664.7" y="545.6" width="275.3" height="4.4" rx="6" ry="6" fill="#F97316" opacity="0.88"/>
+<line x1="802.3" y1="541.8" x2="802.3" y2="549.4" stroke="#111827" stroke-width="1.2"/>
+<line x1="792.3" y1="541.8" x2="812.3" y2="541.8" stroke="#111827" stroke-width="1.2"/>
+<line x1="792.3" y1="549.4" x2="812.3" y2="549.4" stroke="#111827" stroke-width="1.2"/>
+<text x="802.3" y="539.6" text-anchor="middle" font-size="10" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">1.081±0.934</text>
+<text x="802.3" y="568.0" text-anchor="middle" font-size="11" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">FM 1 step</text>
+<rect x="736" y="40" width="10" height="10" rx="2" ry="2" fill="#2563EB" opacity="0.88"/>
+<text x="751" y="49" font-size="11" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">DDPM 10 steps</text>
+<rect x="736" y="56" width="10" height="10" rx="2" ry="2" fill="#16A34A" opacity="0.88"/>
+<text x="751" y="65" font-size="11" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">FM 10 steps</text>
+<rect x="736" y="72" width="10" height="10" rx="2" ry="2" fill="#F97316" opacity="0.88"/>
+<text x="751" y="81" font-size="11" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" fill="#111827">FM 1 step</text>
+</svg>
